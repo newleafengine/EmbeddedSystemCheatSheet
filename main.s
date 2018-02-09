@@ -33,56 +33,7 @@ SYSCTL_RCGCGPIO_R  EQU 0x400FE608
       AREA    |.text|, CODE, READONLY, ALIGN=2
       EXPORT  Start
 Start
-	BL  PortF_Init
-  ; initialization code goes here
-loop   
-	LDR r0, =FIFTHSEC
-	BL delay
-	
-	; this gets the input from the FPORT
-    LDR R1, =GPIO_PORTF_DATA_R ; pointer to Port F data
-    LDR R0, [R1]               ; read all of Port F
-    AND R0,R0,#0x11            ; just the input pins PF0 and PF4
-	
-
-	; here we add the LED we want to turn on, 0x02 = red | 0x04 = blue
-	; WE CANNOT USE CMP or anything BESIDES:
-	; AND, OR, EOR, and the equivalents ;-;
-	
-	;MOV r5, #0x02	; red led
-	;MOV r5, #0x04	; blue led
-
-	; this sets the LED
-    LDR R1, =GPIO_PORTF_DATA_R ; pointer to Port F data
-    STR R5, [R1]               ; write to PF3-1
-
-	B   loop
-         
-		 
-
-;------------delay------------
-; Delay function for testing, which delays about 3*count cycles.
-; Input: R0  count
-; Output: none
-ONESEC             EQU 5333333      ; approximately 1s delay at ~16 MHz clock
-QUARTERSEC         EQU 1333333      ; approximately 0.25s delay at ~16 MHz clock
-FIFTHSEC           EQU 1066666      ; approximately 0.2s delay at ~16 MHz clock
-delay
-    SUBS R0, R0, #1                 ; R0 = R0 - 1 (count = count - 1)
-    BNE delay                       ; if count (R0) != 0, skip to 'delay'
-    BX  LR                          ; return
-	
-	
-
-;------------PortF_Init------------
-; Initialize GPIO Port F for negative logic switches on PF0 and
-; PF4 as the Launchpad is wired.  Weak internal pull-up
-; resistors are enabled, and the NMI functionality on PF0 is
-; disabled.  Make the RGB LED's pins outputs.
-; Input: none
-; Output: none
-; Modifies: R0, R1, R2
-PortF_Init
+								; here we init the port F
     LDR R1, =SYSCTL_RCGCGPIO_R      ; 1) activate clock for Port F
     LDR R0, [R1]
     ORR R0, R0, #0x20               ; set bit 5 to turn on clock
@@ -113,11 +64,70 @@ PortF_Init
     LDR R1, =GPIO_PORTF_DEN_R       ; 7) enable Port F digital port
     MOV R0, #0xFF                   ; 1 means enable digital I/O
     STR R0, [R1]
-    BX  LR
 
+loop   
+
+	
+	; this gets the input from the FPORT
+    LDR R1, =GPIO_PORTF_DATA_R ; pointer to Port F data
+    LDR R0, [R1]               ; read all of Port F
+    AND R0,R0,#0x11            ; just the input pins PF0 and PF4
+
+	LSR r1, r0, #4		; left shift by 4 to get the second door value 
+	BIC r2, r0, #0x10	; clear the second door value bit
+	AND r3, r1, r2		; AND the result to check if both doors are open
+	MOV r5, #0x02		; we store the status of the red led, if we shift by 0 ( a door is open ), if we shift by 1, we get the value of the blue led ( 0x04 )
+	LSL r0, r5, r3		; here we do the shifting, 0x02 << 0 = 0x02, 0x02 << 1 = 0x04, so this works!
+
+	; this sets the LED
+    LDR R1, =GPIO_PORTF_DATA_R ; pointer to Port F data
+    STR R0, [R1]               ; write to PF3-1 using data from R0
+
+	B   loop
 
     ALIGN                           ; make sure the end of this section is aligned
-    END                             ; end of file
-	
-	
-	
+    END                             ; end of file	
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		; need space so i can have code on the top of the screen 'cause keil sucks
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
