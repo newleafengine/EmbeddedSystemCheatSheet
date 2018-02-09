@@ -43,10 +43,18 @@ loop
     LDR R1, =GPIO_PORTF_DATA_R ; pointer to Port F data
     LDR R0, [R1]               ; read all of Port F
     AND R0,R0,#0x11            ; just the input pins PF0 and PF4
+	
+
+	; here we add the LED we want to turn on, 0x02 = red | 0x04 = blue
+	; WE CANNOT USE CMP or anything BESIDES:
+	; AND, OR, EOR, and the equivalents ;-;
+	
+	;MOV r5, #0x02	; red led
+	;MOV r5, #0x04	; blue led
 
 	; this sets the LED
     LDR R1, =GPIO_PORTF_DATA_R ; pointer to Port F data
-    STR R0, [R1]               ; write to PF3-1
+    STR R5, [R1]               ; write to PF3-1
 
 	B   loop
          
