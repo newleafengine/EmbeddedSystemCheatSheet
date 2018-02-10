@@ -9,8 +9,8 @@ add64
        BL Random			; call random
        MOV r3, r0			; store random value in r3
        BL Random			; call random
-	   ADDS	r5, r0, r3
-	   MOVCS r4, #1
+	   ADDS	r5, r0, r3		; add and set flags
+	   MOVCS r4, #1			; if C flag is set, add 1 to r4
        BX r7				; branch link to the address after add64
 	   
 	   ALIGN
