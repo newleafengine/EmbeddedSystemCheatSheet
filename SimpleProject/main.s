@@ -28,7 +28,7 @@ getUnsignedValues
 	   MOVMI r5, #MIN_SIGNED_LOW	; we set r4 to min signed high, min signed low
 	   MOVPL r4, #MAX_SIGNED_HIGH	; else if signed overflow 
 	   MOVSPL r5, #MAX_UNSIGNED_LOW	; we set r4 to max signed upperbits,max signed lower bits ( unsigned low bits are the same )
-	   BX LR
+	   BX LR	; breaks back to the LR
 	   
 	   ALIGN
 	   END
