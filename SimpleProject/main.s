@@ -11,6 +11,7 @@ add64
        BL Random			; call random
        ADDS r5, r0, r3		; add and set flags
        MOVCS r4, #1			; if C flag is set, add 1 to r4
+	   
        BX r7				; branch link to the address after add64
 	   
 	   ALIGN
