@@ -76,8 +76,9 @@ loop
 	LSR r1, r0, #4		; left shift by 4 to get the second door value 
 	BIC r2, r0, #0x10	; clear the second door value bit
 	AND r3, r1, r2		; AND the result to check if both doors are open
-	MOV r5, #0x02		; we store the status of the red led, if we shift by 0 ( a door is open ), if we shift by 1, we get the value of the blue led ( 0x04 )
-	LSL r0, r5, r3		; here we do the shifting, 0x02 << 0 = 0x02, 0x02 << 1 = 0x04, so this works!
+	EOR r3, r3, #1		; we EOR with 1 to flip it so
+	MOV r5, #0x04		; we store the status of the red led, if we shift by 0 ( a door is open ), if we shift by 1, we get the value of the blue led ( 0x04 )
+	LSR r0, r5, r3		; here we do the shifting, 0x02 << 0 = 0x02, 0x02 << 1 = 0x04, so this works!
 
 	; this sets the LED
     LDR R1, =GPIO_PORTF_DATA_R ; pointer to Port F data
@@ -87,47 +88,3 @@ loop
 
     ALIGN                           ; make sure the end of this section is aligned
     END                             ; end of file	
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		; need space so i can have code on the top of the screen 'cause keil sucks
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
