@@ -23,7 +23,8 @@ add64
        ADDS r5, r0, r4				; add and set flags
        MOVCS r4, #MAX_UNSIGNED_HIGH	; if C flag is set, max r4 and r5
 	   MOVCS r5, #MAX_UNSIGNED_LOW	; sets the lower 32 bits to their max value
-	   BLVS	getUnsignedValues		; this function will return the min/max value based on the N flag
+	   BLVS getUnsignedValues		; this function will return the min/max value based on the N flag
+	   PUSH {r4-r5}
        BX r7						; branch link to the address after add64
 	   
 sub64
@@ -35,6 +36,7 @@ sub64
        MOVCS r6, #MIN_UNSIGNED		; if C flag is set, max r4 and r5
 	   MOVCS r7, #MIN_UNSIGNED		; sets the lower 32 bits to their max value
 	   BLVS	getUnsignedValues		; this function will return the min/max value based on the N flag
+	   PUSH {r6-r7}
        BX r4						; branch link to the address after sub64
 	   
 endian
@@ -55,6 +57,7 @@ endian
 	   REV r10, r0
 	   BL Random
 	   REV r11, r0
+	   PUSH {r4-r11}
 	   BX r12
 	   
 getUnsignedValues
