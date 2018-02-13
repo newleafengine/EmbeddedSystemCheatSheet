@@ -15,14 +15,20 @@ Start
 	   BL sub64	; results in r5, r6
 	   BL endian; results in r4-r13
 
+;	r4 = high result
+;	r5 = low result
 add64
        MOV r7, LR					; store the return address of the line 'BL add64'
        BL Random					; call random
-       MOV r4, r0					; store random value in r4
+       MOV r4, r0					; store random value in r4 - low word first number
        BL Random					; call random
-       ADDS r5, r0, r4				; add and set flags
-       MOVCS r4, #MAX_UNSIGNED_HIGH	; if C flag is set, max r4 and r5
-	   MOVCS r5, #MAX_UNSIGNED_LOW	; sets the lower 32 bits to their max value
+       ADDS r5, r0, r4				; add and set flags - low word result
+       MOVCS r4, #1					; if C flag is set, move 1 to the high word result 
+	   BL Random					; call random
+       MOV r6, r0					; store random value in r4 - high word first number
+       BL Random					; call random
+	   ADD r0, r0, r6
+	   ADDS R4, r0, r5 
 	   BLVS getUnsignedValues		; this function will return the min/max value based on the N flag
 	   PUSH {r4-r5}
        BX r7						; branch link to the address after add64
@@ -30,11 +36,15 @@ add64
 sub64
        MOV r4, LR					; store the return address of the line 'BL sub64'
        BL Random					; call random
-       MOV r3, r0					; store random value in r3
+       MOV r4, r0					; store random value in r4 - low word first number
        BL Random					; call random
-       SUBS r7, r0, r3				; add and set flags
-       MOVCS r6, #MIN_UNSIGNED		; if C flag is set, max r4 and r5
-	   MOVCS r7, #MIN_UNSIGNED		; sets the lower 32 bits to their max value
+       SUB r5, r0, r4				; sub and set flags - low word result
+       MOVCS r4, #1					; if C flag is set, move 1 to the high word result 
+	   BL Random					; call random
+       MOV r6, r0					; store random value in r4 - high word first number
+       BL Random					; call random
+	   SUB r0, r0, r6
+	   SUBS R4, r0, r5 
 	   BLVS	getUnsignedValues		; this function will return the min/max value based on the N flag
 	   PUSH {r6-r7}
        BX r4						; branch link to the address after sub64
