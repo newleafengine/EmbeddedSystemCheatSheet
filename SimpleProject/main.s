@@ -34,11 +34,11 @@ add64
        BX r7						; branch link to the address after add64
 	   
 sub64
-       MOV r4, LR					; store the return address of the line 'BL sub64'
+       MOV r7, LR					; store the return address of the line 'BL sub64'
        BL Random					; call random
        MOV r4, r0					; store random value in r4 - low word first number
        BL Random					; call random
-       SUB r5, r0, r4				; sub and set flags - low word result
+       SUBS r5, r0, r4				; sub and set flags - low word result
        MOVCS r4, #1					; if C flag is set, move 1 to the high word result 
 	   BL Random					; call random
        MOV r6, r0					; store random value in r4 - high word first number
@@ -46,8 +46,8 @@ sub64
 	   SUB r0, r0, r6
 	   SUBS R4, r0, r5 
 	   BLVS	getUnsignedValues		; this function will return the min/max value based on the N flag
-	   PUSH {r6-r7}
-       BX r4						; branch link to the address after sub64
+	   PUSH {r4-r5}
+       BX r7						; branch link to the address after sub64
 	   
 endian
 	   MOV r12, LR					; store the return address of the line 'BL endian'
