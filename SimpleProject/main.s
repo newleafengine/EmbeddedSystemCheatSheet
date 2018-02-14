@@ -30,7 +30,8 @@ add64
 	   ADD r0, r0, r6
 	   ADDS R4, r0, r5 
 	   BLVS getUnsignedValues		; this function will return the min/max value based on the N flag
-	   PUSH {r4-r5}
+	   MRS r6, xPSR
+	   PUSH {r4-r7}
        BX r7						; branch link to the address after add64
 	   
 sub64
@@ -46,7 +47,8 @@ sub64
 	   SUB r0, r0, r6
 	   SUBS R4, r0, r5 
 	   BLVS	getUnsignedValues		; this function will return the min/max value based on the N flag
-	   PUSH {r4-r5}
+	   MRS r6, xPSR
+	   PUSH {r4-r7}
        BX r7						; branch link to the address after sub64
 	   
 endian
@@ -65,8 +67,7 @@ endian
 	   REV r9, r0
 	   BL Random
 	   REV r10, r0
-	   BL Random
-	   REV r11, r0
+	   MRS r11, xPSR
 	   PUSH {r4-r11}
 	   BX r12
 	   
