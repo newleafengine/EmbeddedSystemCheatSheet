@@ -1,5 +1,5 @@
 ;****************** main.s ***************
-; Program written by: ***Your Names**update this***
+; Program written by: ***Omar Martinez***
 ; Date Created: 2/4/2017
 ; Last Modified: 1/15/2018
 ; Brief description of the program
@@ -44,25 +44,46 @@ GPIO_LOCK_KEY      EQU 0x4C4F434B  ; Unlocks the GPIO_CR register
 SYSCTL_RCGCGPIO_R  EQU 0x400FE608
 SYSCTL_RCGC2_GPIOE EQU 0x00000012   ; port E Clock Gating Control
 DELAYTIME		   EQU 2500000
-
+LED_OFF			   EQU 0x00	
+LED_ON			   EQU 0x01
+PERCENT			   EQU 100
 
 	 IMPORT  TExaS_Init
      THUMB
      AREA    DATA, ALIGN=2
 ;global variables go here
-
      AREA    |.text|, CODE, READONLY, ALIGN=2
      THUMB
      EXPORT  Start
-		 
+	
+; R0 = Percentage of delay time to delay by
+; R1 = DELAY TIME = 2.5 mil cycles
+; Delay will do R1 * R0 / R13 to delay by a percentage
 delay
+	LDR R1, =DELAYTIME
+	LDR R2, =PERCENT
+	MUL R0, R1
+	UDIV R0, R2
+	ADD R0, #1		; make sure to add 1 so that we don't subtract by 0 / negative vals
+delayloop
     subs    r0, #1
-    bne     delay
+    bne     delayloop
     bx      lr
+	
+	; REMINDERS
+	;R0~R4 = Data for functions, never assume any data from those registers
+	;R5 = PE0 Button Status
+	;R6 = SW1 status 1 - pressed 0 - off
+	;R7 = DirectionBool
+	;R8 = PE0 Button Address
+	;R9 = PE0 bool to check pressed / released
+	;R10 = SW1 Address
+	;R11 = Duty On Time
+	;R12 = Duty Off Time
 	
 Start
  ; TExaS_Init sets bus clock at 80 MHz
-     BL  TExaS_Init ; voltmeter, scope on PD3
+    BL  TExaS_Init ; voltmeter, scope on PD3
  ; Initialization goes here
 	; here we init the port F
     LDR R1, =SYSCTL_RCGCGPIO_R      ; 1) activate clock for Port F
@@ -71,11 +92,10 @@ Start
     STR R0, [R1]
     NOP
     NOP
-	
 	; here we init the port E
-    LDR R1, =SYSCTL_RCGCGPIO_R      ; 1) activate clock for Port F
+    LDR R1, =SYSCTL_RCGCGPIO_R      ; 1) activate clock for Port E
     LDR R0, [R1]
-    ORR R0, R0, #SYSCTL_RCGC2_GPIOE  ; set bit 5 to turn on clock
+    ORR R0, R0, #SYSCTL_RCGC2_GPIOE  ; set bit 0x12 to turn on clock for port e
     STR R0, [R1]
     NOP
     NOP
@@ -111,25 +131,89 @@ Start
 	LDR R1, =GPIO_PORTE_DEN_R       ; 7) enable Port F digital port
     MOV R0, #0xFF                   ; 1 means enable digital I/O
     STR R0, [R1]
-	LDR R1, =GPIO_PORTE_DATA_R	; points to Port E Data
-	MOV R5, #0x01					; LED ON
-	MOV R6, #0x00					; LED OFF
+	; initialize variables before we start our loop
+	LDR R8, =GPIO_PORTE_DATA_R	; points to Port E Data
+	MOV R11, #20						; LED ON TIME
+	MOV R12, #80						; LED OFF TIME
+	MOV R6, #0							; SW is not pressed
     CPSIE  I    ; TExaS voltmeter, scope runs on interrupts
 loop 
-	;LDR R3, =GPIO_PORTF_DATA_R	; points to Port F Data
-	;LDR R2, [R3]
-	;LSR r2, r2, #4		; left shift by 4 to get the second door value 
-	;EOR R2, r2, #1		; flip from 0 <-> 1
 ; main engine goes here
+; check if SW status
+	LDR R10, =GPIO_PORTF_DATA_R		; points to Port F Data
+	LDR R6, [R10]					; put the data from r10 to r6
+	LSR R6, R6, #4					; left shift by 4 to get the second button value 
+	EOR R6, R6, #1					; flip from 0 <-> 1
+	CMP R6, #1						; if SW1 is pressed, then start breathing
+	BLEQ breath
+; check PE0 status
+	LDR R5, [R8]
+	CMP R5, #2
+	MOVEQ R9, #1
+	BLNE checkButtonStatus
+	CMP R11, #100
+	BLHI dutyReset
+; Handle default LED behaviour
+	BL toggleLED
+    B loop
 
-	STR R5, [R1]				; store the data in R0 back to Port E
-	LDR R0, =DELAYTIME			; store two delay in R0 to delay by 1/8 * .2
-	MOV R0, #DELAYTIME :MOD: 7
+increaseDutyCycle	; this increases the duty cycle by R0
+	ADD R11, R11, R0
+	SUB R12, R12, R0
+	CMP R11, #100
+	MOVHI R7, #1
+	BX LR
+	
+decreaseDutyCycle	; this decreases the duty cycle by R0
+	SUB R11, R11, R0
+	ADD R12, R12, R0
+	CMP R12, #100
+	MOVHI R7, #0
+	BX LR
+
+dutyReset
+	MOV R11, #0
+	MOV R12, #100
+	BX LR
+
+checkButtonStatus
+	MOV R4, LR
+	CMP R9, #1
+	MOV R0, #20
+	BLEQ increaseDutyCycle
+	MOV R9, #0
+	MOV LR, R4
+	BX LR;
+
+breath
+	MOV R3, LR
+	MOV R0, #2
+	CMP R7, #0	; check if R11 is 100
+	BLEQ increaseDutyCycle
+	CMP R7, #1
+	BLEQ decreaseDutyCycle
+	; check if we have a delay bigger than 100 or less than 0
+	CMP R11, #0
+	BLMI dutyReset	
+	CMP R12, #0
+	BLMI dutyReset
+	BL toggleLED
+	MOV LR, R3
+	BX LR;
+	
+toggleLED
+	MOV R4, LR
+	LDR R0, =LED_ON
+	STR R0, [R8]	; turn led on
+	MOV R0, R11
 	BL delay
-	STR R6, [R1]				; turn led off
-	LDR R0, =DELAYTIME			; store eight delay in R0 to delay by 1/8 * .8
+	LDR R0, =LED_OFF
+	STR R0, [R8]	; turn led off
+	MOV R0, R12
 	BL delay
-    B    loop
+	MOV LR, R4
+	BX LR;
+	
 
      ALIGN      ; make sure the end of this section is aligned
      END        ; end of file
